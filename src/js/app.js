@@ -1,62 +1,73 @@
-/**
- * Welcome to Pebble.js!
- *
- * This is where you write your app.
- */
-
 var UI = require('ui');
-var Vector2 = require('vector2');
+var ajax = require('ajax');
 
-var main = new UI.Card({
-  title: 'Pebble.js',
-  icon: 'images/menu_icon.png',
-  subtitle: 'Hello World!',
-  body: 'Press any button.',
-  subtitleColor: 'indigo', // Named colors
-  bodyColor: '#9a0036' // Hex colors
-});
+var platforms={
+    2: "Hickory @ Quest",
+    5: "PVCC Dickinson"
+};
 
-main.show();
+var stopItems=[];
 
-main.on('click', 'up', function(e) {
-  var menu = new UI.Menu({
-    sections: [{
-      items: [{
-        title: 'Pebble.js',
-        icon: 'images/menu_icon.png',
-        subtitle: 'Can do Menus'
-      }, {
-        title: 'Second Item',
-        subtitle: 'Subtitle Text'
-      }]
+for (var p in platforms) {
+	var stopname=platforms[p];
+    	stopItems.push( {
+	    title: stopname,
+	    subtitle: p
+	});
+}
+
+
+var stopsMenu = new UI.Menu( {
+    sections: [ {
+    	title: "Stops",
+	items: stopItems
     }]
-  });
-  menu.on('select', function(e) {
-    console.log('Selected item #' + e.itemIndex + ' of section #' + e.sectionIndex);
-    console.log('The item is titled "' + e.item.title + '"');
-  });
-  menu.show();
 });
 
-main.on('click', 'select', function(e) {
-  var wind = new UI.Window({
-    fullscreen: true,
-  });
-  var textfield = new UI.Text({
-    position: new Vector2(0, 65),
-    size: new Vector2(144, 30),
-    font: 'gothic-24-bold',
-    text: 'Text Anywhere!',
-    textAlign: 'center'
-  });
-  wind.add(textfield);
-  wind.show();
+var stopCard = new UI.Card( {
+      title:'Timetable',
+      subtitle:'Fetching...',
+      scrollable: true,
+      style: 'small'
+    });
 });
 
-main.on('click', 'down', function(e) {
-  var card = new UI.Card();
-  card.title('A Card');
-  card.subtitle('Is a Window');
-  card.body('The simplest window type in Pebble.js.');
-  card.show();
+stopsMenu.on('select', function(e) {
+    showStop(e.item.subtitle);
 });
+
+function showStop(stopNum) {
+    // Refresh our global card object
+    stopCard.subtitle('Fetching...');
+    stopCard.show();
+
+    // Construct URL
+    var URL = 'http://www.cv.nrao.edu/php/jmalone/bus.php?platform='+stopNum;
+    var timetable = '';
+
+    // Make the request
+    ajax( { url: URL, type: 'json' },
+      function(data) {
+	// Success!
+	console.log("Successfully fetched data!");
+
+	// Extract data 
+	for (var route in data.ETA) {
+	  var dest = data.ETA[route].destination[0];
+	  for (var bus=0; bus<data.ETA[route].arrivals.length; bus++) {
+	    timetable=timetable + route+' ('+dest.substring(0,10)+') : ' 
+		+data.ETA[route].arrivals[bus]+'\n';
+	  }
+	}
+	// Show to user
+	stopCard.subtitle("");
+	stopCard.body(data.name+"\n"+timetable);
+      },
+      function(error) {
+	// Failure!
+	console.log('Failed fetching bus data: ' + error);
+      }
+    );
+}
+
+stopsMenu.show();
