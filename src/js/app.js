@@ -5,7 +5,6 @@ var platforms={
     2: "Hickory @ Quest",
     5: "PVCC Dickinson"
 };
-
 var stopItems=[];
 
 for (var p in platforms) {
@@ -15,7 +14,6 @@ for (var p in platforms) {
 	    subtitle: p
 	});
 }
-
 
 var stopsMenu = new UI.Menu( {
     sections: [ {
@@ -29,7 +27,6 @@ var stopCard = new UI.Card( {
       subtitle:'Fetching...',
       scrollable: true,
       style: 'small'
-    });
 });
 
 stopsMenu.on('select', function(e) {
